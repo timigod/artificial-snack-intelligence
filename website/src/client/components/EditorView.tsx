@@ -44,6 +44,9 @@ import { isScript, isJson, isTest } from '../utils/fileUtilities';
 import lintFile from '../utils/lintFile';
 import prettierCode from '../utils/prettierCode';
 
+// Add this import at the top of the file
+import ChatPane from './ChatPane'; // You'll need to create this component
+
 const EDITOR_LOAD_FALLBACK_TIMEOUT = 3000;
 
 export type Props = PreferencesContextType &
@@ -81,6 +84,7 @@ type State = {
   lintAnnotations: Annotation[];
   shouldPreventRedirectWarning: boolean;
   isPanelResizing: boolean;
+  isChatPaneVisible: boolean;
 };
 
 const BANNER_TIMEOUT_SHORT = 1500;
@@ -97,6 +101,7 @@ class EditorView extends React.Component<Props, State> {
     lintAnnotations: [],
     shouldPreventRedirectWarning: false,
     isPanelResizing: false,
+    isChatPaneVisible: true,
   };
 
   static getDerivedStateFromProps(props: Props, state: State) {
@@ -356,7 +361,7 @@ class EditorView extends React.Component<Props, State> {
   };
 
   render() {
-    const { currentModal, currentBanner, lintAnnotations } = this.state;
+    const { currentModal, currentBanner, lintAnnotations, isChatPaneVisible } = this.state;
 
     const {
       id,
@@ -461,7 +466,21 @@ class EditorView extends React.Component<Props, State> {
                   onPublishAsync={onPublishAsync}
                 />
                 <PanelGroup direction="horizontal">
-                  <Panel id="editor" order={1}>
+                  {isChatPaneVisible && (
+                    <>
+                      <Panel id="chat" order={1} defaultSize={20} minSize={15}>
+                        <ChatPane />
+                      </Panel>
+                      <PanelResizeHandle
+                        className={css(styles.panelResizeTouchArea)}
+                      >
+                        <div className={css(styles.resizeHandleContainer)}>
+                          <div className={css(styles.resizeHandle)} />
+                        </div>
+                      </PanelResizeHandle>
+                    </>
+                  )}
+                  <Panel id="editor" order={2}>
                     <div className={css(styles.panelContainer)}>
                       <LayoutShell>
                         <FileList
@@ -638,7 +657,7 @@ class EditorView extends React.Component<Props, State> {
                       </PanelResizeHandle>
                       <Panel
                         id="preview"
-                        order={2}
+                        order={3}
                         defaultSize={20}
                         collapsible
                         collapsedSize={0}
@@ -817,23 +836,11 @@ const styles = StyleSheet.create({
   },
 
   panelResizeTouchArea: {
-    borderRight: `1px solid ${c('border-editor')}`,
     width: 12,
     height: '100%',
-
-    display: 'none',
-    [`@media (min-width: ${constants.preview.minWidth}px)`]: {
-      display: 'block',
-    },
-
     ':hover': {
       backgroundColor: c('hover'),
     },
-  },
-
-  // Note(cedric): aphrodite does not support styling by attribute, so this is now handled by state
-  panelResizeTouchAreaActive: {
-    backgroundColor: c('hover'),
   },
 
   resizeHandleContainer: {
@@ -843,7 +850,7 @@ const styles = StyleSheet.create({
   },
 
   resizeHandle: {
-    backgroundColor: c('border-editor'),
+    backgroundColor: c('border'),
     width: 4,
     height: 32,
     borderRadius: 2,
